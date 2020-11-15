@@ -1,0 +1,138 @@
+Public Sub Wksht_Loops()
+
+'Creating Worksheet Loops Through Entire Workbook
+       
+'Setting index for loop through Worksheets
+    Dim i As Integer
+
+'Setting up loop sequence
+    For i = 1 To Worksheets.Count
+    Worksheets(i).Select
+
+'List of Subroutines that run through Worksheets loop
+    Multi_Yr_Stk
+    Summary_Table_Calc
+    Formating
+    
+'Calling for next sheet
+    Next i
+
+End Sub
+
+'Setting up Subroutine for creating sorting table for Ticker, Yearly Change, Percent Change and Total Stock Volume
+Public Sub Multi_Yr_Stk()
+
+'Defining column headers for results
+    Cells(1, 9).Value = "Ticker"
+    Cells(1, 10).Value = "Yearly Change"
+    Cells(1, 11).Value = "Percent Change"
+    Cells(1, 12).Value = "Total Stock Volume"
+    Cells(1, 16).Value = "Ticker"
+    Cells(1, 17).Value = "Value"
+    Cells(2, 15).Value = "Greatest % Increase"
+    Cells(3, 15).Value = "Greatest % Decrease"
+    Cells(4, 15).Value = "Greatest Total Volume"
+    
+'Defining column width for designated columns
+    Columns("J:K").ColumnWidth = 12.5
+    Columns("L:L").ColumnWidth = 14
+    Columns("O:O").ColumnWidth = 18
+    Columns("P:Q").ColumnWidth = 11
+    
+'Dimensioning parameters and variables for memory space creation
+    Dim Ticker As String                'Defining Ticker header as String type
+    Dim Yearly_Change As Double         'Defining Yearly Change as Double type
+    Dim Percent_Change As Double        'Defining Percent Change as Double type
+    Dim Tot_Stk_Vol As Long             'Defining Total Stock Volume as Long type
+    Dim LastRow As Long                 'Defining Individual last row as Long type
+    Dim Summary_Row As Long             'Defining Summary Row for iteration as Long type
+    Dim Starter_Row As Double           'Defining Starting Row in the sequence as Double type
+    Dim i As Long                       'Defining iterator as Long type
+    Dim MaxValue As Double              'Defining Greatest Percent Increase as Double type
+    Dim MinValue As Double              'Defining Greatest Percent Decrease as Double type
+    Dim MaxTotVol As Double             'Defining Maximum Total Volume as Double type
+           
+'Defining last row in the data set
+    LastRow = Cells(Rows.Count, "A").End(xlUp).Row
+            
+'Initializing key rows for iteration
+    Starter_Row = 2                     'Starter data row in data set
+    Summary_Row = 2                     'Initializing iterated row
+                       
+'Initiating For loop for iterating Columns "I" to "L"
+    For i = 2 To LastRow                'Defining the rows for iteration
+            
+'Defining conditions for iteration
+        If Cells(i + 1, 1).Value <> Cells(i, 1).Value Then
+            
+            Ticker = Cells(i, 1).Value                                              'Creating the values for the "I" Column with iteration results
+            Yearly_Change = Cells(i, 6).Value - Cells(Starter_Row, 3).Value         'Creating the values for the "J" Column with iteration results
+                
+            'Creating conditional formating for "J" or Yearly Change colors
+            If (Yearly_Change > 0) Then
+                Cells(Summary_Row, 10).Interior.ColorIndex = 4                      'Filling negative value cells in Yearly Change column with red color
+            Else
+                Cells(Summary_Row, 10).Interior.ColorIndex = 3                      'Filling positive value cells in Yearly Change column with green color
+            End If
+                
+'Defining terms for filling Total Volume and Percent Change Columns
+            Opening_Price = Cells(Starter_Row, 3).Value                             'Opening prices for each ticker
+            
+            'Creating condition for Percent Change and Total Stock Volume
+            If Opening_Price = 0 Then
+                Percent_Change = 0                                                  'Initialing value for computing percent change
+            Else
+                Percent_Change = Round((Yearly_Change / Opening_Price) * 100, 2)    'Computing Percent Change for each ticker range
+            End If
+                
+            'Inputing values in Ticker, Yearly Change, Percent Change and Total Stock Volume columns
+                Cells(Summary_Row, 9).Value = Ticker                                'Filling each cell in Ticker Cells
+                Tot_Stk_Vol = Tot_Stk_Vol + Cells(i, 7).Value                       'Computing Total Stock Volume for each ticker range
+                Cells(Summary_Row, 12).Value = Tot_Stk_Vol                          'Filling each cell in Total Stock Volume Cells
+                Cells(Summary_Row, 10).Value = Yearly_Change                        'Filling each cell in Yearly Change Cells
+                Cells(Summary_Row, 11).Value = (CStr(Percent_Change) & "%")         'Filling each cell in Percent Change Cells and formating as percentages
+                
+            'Reinitializing iterative variables
+                Starter_Row = i + 1                                                 'Step increase in starter row for calcuting per each Ticker
+                Summary_Row = Summary_Row + 1                                       'Step increase in iterated row
+                Percent_Change = 0                                                  'Reinitializing Percent Change iterator
+                Tot_Stk_Vol = 0                                                     'Reinitializing Total Stock Volumer iterator
+        End If
+            
+    Next i
+
+End Sub
+
+'Computing values for Summary table; creating new subroutine
+Public Sub Summary_Table_Calc()
+
+'Calculating maximum percent change value and corresponding Ticker
+    MaxValue = Application.WorksheetFunction.Max(Range("K:K"))                              'Calculating Greatest Percent increase
+    Range("P2") = Application.WorksheetFunction.XLookup(MaxValue, [K:K], [I:I], "None")     'Conducting lookup for Ticker that matches Greatest Percent Increase
+    Range("Q2").Value = MaxValue                                                            'Outputing maximum or greatest percent increase to appropriate cell
+                    
+'Calculating minimum percent change value and corresponding Ticker
+    MinValue = Application.WorksheetFunction.Min(Range("K:K"))                              'Calculating Greatest Percent decrease
+    Range("P3") = Application.WorksheetFunction.XLookup(MinValue, [K:K], [I:I], "None")     'Conducting lookup for Ticker that matches Greatest Percent Decrease
+    Range("Q3").Value = MinValue                                                            'Outputing minimum or greatest percent decrease to appropriate cell
+     
+'Calculating Greatest Total Volume
+    MaxTotVol = Application.WorksheetFunction.Max(Range("L:L"))                             'Calculating Greatest Total Volume
+    Range("Q4").Value = MaxTotVol                                                           'Outputing maximum or greatest Total Volume
+    Range("P4") = Application.WorksheetFunction.XLookup(MaxTotVol, [L:L], [I:I], "None")    'Conducting lookup for Greatest Total Volume
+ 
+End Sub
+
+'Creating formating for final presentation
+Public Sub Formating()
+
+'Formating Summary Table
+    Cells(2, 17).Select
+    Selection.NumberFormat = "#,##0.00%"                   'Comma and percentage formating for values in column Q for Greatest Percent Increase
+    Cells(3, 17).Select
+    Selection.NumberFormat = "#,##0.00%"                   'Comma and percentage formating for values in column Q for Greatest Percent Decrease
+    Range("Q4").NumberFormat = "#,###,##0"                 'Comma formating for values in column Q for Greatest Total Volume
+    Columns("L:L").Select
+    Selection.NumberFormat = "#,###,##0"                   'Comma formating for values in column L
+
+End Sub
